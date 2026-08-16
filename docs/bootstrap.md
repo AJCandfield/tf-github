@@ -1,11 +1,11 @@
 # Bootstrap and state migration
 
-## Rename and repository bootstrap
+## Repository bootstrap
 
-The public GitHub repository was renamed out-of-band from `AJCandfield/tf-github` to `AJCandfield/tf-repo-management`; the local `origin` points at the renamed URL. Confirm the remote before pushing:
+The public GitHub repository is managed as `AJCandfield/tf-repos`, and the local `origin` points at that URL. Confirm the remote before pushing:
 
 ```sh
-gh api repos/AJCandfield/tf-repo-management
+gh api repos/AJCandfield/tf-repos
 git remote -v
 ```
 
@@ -13,7 +13,7 @@ Export `GITHUB_TOKEN` in the shell (for example, `export GITHUB_TOKEN="$(gh auth
 
 ## State migration
 
-The former local state was backed up outside Git at `/Users/aj/code/state-backups/tf-github-portfolio-20260816181114.tfstate` and moved to `clouds/github/AJCandfield/talos-gcp-infra/terraform.tfstate`. Verify the state before any mutation:
+The GitHub leaf keeps authoritative local state beside its Terragrunt configuration at `clouds/github/AJCandfield/talos-gcp-infra/terraform.tfstate`. Verify the state before any mutation:
 
 ```sh
 cd clouds/github/AJCandfield/talos-gcp-infra
@@ -22,7 +22,7 @@ terragrunt state list
 terragrunt plan
 ```
 
-The expected address is `github_repository.this` and the expected remote object is `AJCandfield/talos-gcp-infra`. A plan must not propose recreation or destruction. Stop and restore the backup if that occurs. Never commit state, plans, `.terraform/`, or credentials.
+The expected address is `github_repository.this` and the expected remote object is `AJCandfield/talos-gcp-infra`. A plan must not propose recreation or destruction. Never commit state, plans, `.terraform/`, or credentials.
 
 If a future refactor changes the resource address, use a deliberate `terraform state mv` from the old address to the new address only after reviewing both state lists. Do not apply a destructive or recreating plan.
 

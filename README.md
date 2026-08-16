@@ -1,4 +1,4 @@
-# tf-repo-management
+# tf-repos
 
 Backend-neutral Terraform/Terragrunt management for AJCandfield's public source repositories.
 
@@ -6,7 +6,7 @@ Backend-neutral Terraform/Terragrunt management for AJCandfield's public source 
 
 This repository manages repository lifecycle policy as infrastructure. GitHub is the active backend and currently manages `AJCandfield/talos-gcp-infra`. GitLab support is scaffolded for later use and intentionally has no live project declaration.
 
-This project does not create cloud infrastructure, Kubernetes clusters, GitLab projects, or Linear issues. State remains local and ignored during this bootstrap.
+This project does not create cloud infrastructure, Kubernetes clusters, or GitLab projects. State remains local and ignored during this bootstrap.
 
 ## Architecture and status
 
