@@ -7,25 +7,47 @@ on:
 permissions:
   contents: read
 
+env:
+  TF_IN_AUTOMATION: "true"
+
 jobs:
-  checks:
+  modules:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aquaproj/aqua-installer@v4
-        with:
-          aqua_version: v2.53.3
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.15.8
       - uses: terraform-linters/setup-tflint@v5
-      - uses: terraform-docs/gh-actions@v1
-        with:
-          working-dir: modules/github-repository
-          config-file: ../../terraform-docs.yml
-          git-push: "false"
-      - run: terraform fmt -check -recursive
+      - run: terraform fmt -check -recursive modules
       - run: terraform -chdir=modules/github-repository init -backend=false
       - run: terraform -chdir=modules/github-repository validate
-      - run: tflint --init && tflint --recursive
+      - run: terraform -chdir=modules/gitlab-project init -backend=false
+      - run: terraform -chdir=modules/gitlab-project validate
+      - run: tflint --init && tflint --recursive modules
+
+  github-live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.8
+      - uses: gruntwork-io/terragrunt-action@v2
+        with:
+          tg_version: 1.1.1
+          tg_dir: clouds/github/AJCandfield/talos-gcp-infra
+          tg_command: hcl fmt --check
+      - uses: gruntwork-io/terragrunt-action@v2
+        with:
+          tg_version: 1.1.1
+          tg_dir: clouds/github/AJCandfield/talos-gcp-infra
+          tg_command: validate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: pre-commit/action@v3.0.1

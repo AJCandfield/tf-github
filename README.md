@@ -1,31 +1,18 @@
-# tf-github
+# tf-repo-management
 
-Reusable Terraform/Terragrunt management for public GitHub repositories in the `AJCandfield` account.
+Backend-neutral Terraform/Terragrunt management for AJCandfield's public source repositories.
 
-## Bootstrap
+## Intent and scope
 
-This repository is intentionally bootstrapped once out-of-band: Terraform cannot create the repository containing its own configuration. Authenticate with `gh auth login`, then export a short-lived token only in the shell when running Terraform:
+This repository manages repository lifecycle policy as infrastructure. GitHub is the active backend and currently manages `AJCandfield/talos-gcp-infra`. GitLab support is scaffolded for later use and intentionally has no live project declaration.
 
-```sh
-export GITHUB_TOKEN="$(gh auth token)"
-cd live/portfolio
-tg init
-tg plan       # review the talos-gcp-infra repository change
-tg apply      # approved GitHub-only mutation; never targets GCP
-```
+This project does not create cloud infrastructure, Kubernetes clusters, GitLab projects, or Linear issues. State remains local and ignored during this bootstrap.
 
-Do not write tokens to files or commit local state. State is local and gitignored.
+## Architecture and status
 
-## Layout
+- `modules/github-repository/` contains the reusable GitHub repository module.
+- `modules/gitlab-project/` contains a reusable GitLab project module for future use.
+- `clouds/github/` and `clouds/gitlab/` are separate Terragrunt roots with independent providers and state prefixes.
+- The GitHub leaf adopts the existing repository state under its backend-specific path.
 
-- `modules/github-repository`: reusable repository resource and policy inputs.
-- `live/portfolio`: Terragrunt-managed repository declarations and local state.
-
-## Checks
-
-```sh
-terraform fmt -check -recursive
-pre-commit run --all-files
-```
-
-CI performs formatting, validation, lint, documentation, and pre-commit checks only; it never applies infrastructure.
+Status: GitHub active; GitLab scaffold-only; local-state migration and bootstrap validation are documented in `docs/`.
