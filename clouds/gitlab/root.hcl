@@ -26,10 +26,6 @@ provider "gitlab" {
 EOF
 }
 
-inputs = {
-  gitlab_group = local.gitlab_group
-}
-
 terraform {
   extra_arguments "lock_timeout" {
     commands  = get_terraform_commands_that_need_locking()

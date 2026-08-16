@@ -28,10 +28,6 @@ provider "github" {
 EOF
 }
 
-inputs = {
-  github_owner = local.github_owner
-}
-
 terraform {
   extra_arguments "lock_timeout" {
     commands  = get_terraform_commands_that_need_locking()
