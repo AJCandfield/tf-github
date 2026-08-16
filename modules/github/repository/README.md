@@ -1,4 +1,4 @@
-# github-repository module
+# repository module
 
 Creates and configures a GitHub repository with portfolio defaults, topics, merge policy, and secret scanning settings.
 

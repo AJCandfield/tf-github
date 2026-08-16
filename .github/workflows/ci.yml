@@ -20,10 +20,10 @@ jobs:
           terraform_version: 1.15.8
       - uses: terraform-linters/setup-tflint@v5
       - run: terraform fmt -check -recursive modules
-      - run: terraform -chdir=modules/github-repository init -backend=false
-      - run: terraform -chdir=modules/github-repository validate
-      - run: terraform -chdir=modules/gitlab-project init -backend=false
-      - run: terraform -chdir=modules/gitlab-project validate
+      - run: terraform -chdir=modules/github/repository init -backend=false
+      - run: terraform -chdir=modules/github/repository validate
+      - run: terraform -chdir=modules/gitlab/project init -backend=false
+      - run: terraform -chdir=modules/gitlab/project validate
       - run: tflint --init && tflint --recursive modules
 
   github-live:
