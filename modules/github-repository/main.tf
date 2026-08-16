@@ -8,11 +8,11 @@ resource "github_repository" "this" {
   has_projects = var.has_projects
   has_wiki     = var.has_wiki
 
-  allow_squash_merge = var.allow_squash_merge
-  allow_merge_commit = var.allow_merge_commit
-  allow_rebase_merge = var.allow_rebase_merge
+  allow_squash_merge     = var.allow_squash_merge
+  allow_merge_commit     = var.allow_merge_commit
+  allow_rebase_merge     = var.allow_rebase_merge
   delete_branch_on_merge = var.delete_branch_on_merge
-  auto_init             = false
+  auto_init              = false
 
   security_and_analysis {
     secret_scanning {
