@@ -18,4 +18,3 @@ credentials.json
 
 # Tooling
 .DS_Store
-.pre-commit-hooks.yaml
