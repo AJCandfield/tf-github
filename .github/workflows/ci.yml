@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquaproj/aqua-installer@v4
+        with:
+          aqua_version: v2.53.3
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.8
+      - uses: terraform-linters/setup-tflint@v5
+      - uses: terraform-docs/gh-actions@v1
+        with:
+          working-dir: modules/github-repository
+          config-file: ../../terraform-docs.yml
+          git-push: "false"
+      - run: terraform fmt -check -recursive
+      - run: terraform -chdir=modules/github-repository init -backend=false
+      - run: terraform -chdir=modules/github-repository validate
+      - run: tflint --init && tflint --recursive
+      - uses: pre-commit/action@v3.0.1

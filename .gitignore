@@ -1,0 +1,21 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.json
+crash.log
+crash.*.log
+.terragrunt-cache/
+
+# Credentials and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# Tooling
+.DS_Store
+.pre-commit-hooks.yaml
