@@ -1,0 +1,9 @@
+.git
+.github
+.mise
+.terraform
+.terragrunt-cache
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfplan.json

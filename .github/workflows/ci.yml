@@ -4,8 +4,6 @@ on:
   pull_request:
     paths:
       - "clouds/**"
-      - ".terraform-version"
-      - ".terragrunt-version"
       - ".mise.toml"
       - ".github/workflows/ci.yml"
   workflow_dispatch:
@@ -21,29 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # mise installs the exact Terraform and Terragrunt versions declared in
-      # .mise.toml. Its GitHub Actions cache avoids downloading them on every
-      # run while keeping version changes reproducible.
       - uses: jdx/mise-action@v3
         with:
           install: true
           cache: true
-      - name: Check version-file agreement
-        run: |
-          test "$(tr -d '[:space:]' < .terraform-version)" = "$(mise config get tools.terraform)"
-          test "$(tr -d '[:space:]' < .terragrunt-version)" = "$(mise config get tools.terragrunt)"
-      # terragrunt hcl fmt only covers Terragrunt HCL (root.hcl,
-      # terragrunt.hcl). Modules live in AJCandfield/tf-modules and are
-      # formatted/linted by that repository's CI.
       - name: Check Terragrunt HCL formatting
         run: terragrunt hcl fmt --check
-      # Discovers every unit (terragrunt.hcl) recursively from the repo
-      # root; new clouds or stacks need no pipeline edits. Terragrunt
-      # handles init and generated backend/provider files per unit.
       - name: Validate every Terragrunt unit
         env:
-          # Passed to whichever provider each unit needs; GITLAB_TOKEN
-          # becomes required once units exist under clouds/gitlab.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
         run: terragrunt run --all --non-interactive -- validate
