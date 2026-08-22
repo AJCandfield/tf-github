@@ -1,8 +1,16 @@
-name: CI
+name: Terraform
 
 on:
-  push:
   pull_request:
+    paths:
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - "**/*.hcl"
+      - ".terraform-version"
+      - ".terragrunt-version"
+      - ".mise.toml"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,43 +19,34 @@ env:
   TF_IN_AUTOMATION: "true"
 
 jobs:
-  modules:
+  terragrunt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      # Every root is a Terragrunt unit, so terraform is only installed
+      # as a dependency for terragrunt to shell out to; the pipeline
+      # never invokes terraform per root.
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.15.8
-      - uses: terraform-linters/setup-tflint@v5
-      - run: terraform fmt -check -recursive modules
-      - run: terraform -chdir=modules/github/repository init -backend=false
-      - run: terraform -chdir=modules/github/repository validate
-      - run: terraform -chdir=modules/gitlab/project init -backend=false
-      - run: terraform -chdir=modules/gitlab/project validate
-      - run: tflint --init && tflint --recursive modules
-
-  github-live:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+          terraform_version: 1.15.8 # keep in sync with .terraform-version
+      # terragrunt hcl fmt only covers terragrunt HCL (root.hcl,
+      # terragrunt.hcl). Modules now live in AJCandfield/tf-modules and
+      # are formatted/linted by that repository's CI.
+      - name: Check Terragrunt HCL formatting
+        uses: gruntwork-io/terragrunt-action@v2
         with:
-          terraform_version: 1.15.8
-      - uses: gruntwork-io/terragrunt-action@v2
-        with:
-          tg_version: 1.1.1
-          tg_dir: clouds/github/AJCandfield/talos-gcp-infra
+          tg_version: 1.1.1 # keep in sync with .terragrunt-version
           tg_command: hcl fmt --check
-      - uses: gruntwork-io/terragrunt-action@v2
+      # Discovers every unit (terragrunt.hcl) recursively from the repo
+      # root; new clouds or stacks need no pipeline edits. Terragrunt
+      # handles init and generated backend/provider files per unit.
+      - name: Validate every Terragrunt unit
+        uses: gruntwork-io/terragrunt-action@v2
         with:
           tg_version: 1.1.1
-          tg_dir: clouds/github/AJCandfield/talos-gcp-infra
-          tg_command: validate
+          tg_command: run --all --non-interactive -- validate
         env:
+          # Passed to whichever provider each unit needs; GITLAB_TOKEN
+          # becomes required once units exist under clouds/gitlab.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  hygiene:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pre-commit/action@v3.0.1
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}

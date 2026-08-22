@@ -3,7 +3,7 @@ include "root" {
 }
 
 terraform {
-  source = "../../../..//modules/github/repository"
+  source = "git::https://github.com/AJCandfield/tf-modules.git//modules/github/repository?ref=main"
 }
 
 inputs = {

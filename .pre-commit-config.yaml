@@ -1,14 +1,4 @@
 repos:
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.99.0
-    hooks:
-      - id: terraform_fmt
-      - id: terraform_validate
-        exclude: ^clouds/.*\.tf$
-      - id: terraform_tflint
-        exclude: ^clouds/.*\.tf$
-      - id: terraform_docs
-        exclude: ^clouds/.*\.tf$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
