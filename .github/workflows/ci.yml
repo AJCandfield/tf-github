@@ -4,9 +4,7 @@ on:
   pull_request:
     paths:
       - "clouds/**"
-      - ".mise.toml"
-      - "Dockerfile"
-      - ".dockerignore"
+      - "docker/ci/**"
       - ".github/workflows/ci.yml"
       - ".github/workflows/toolchain-image.yml"
   workflow_dispatch:
