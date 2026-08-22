@@ -35,7 +35,7 @@ jobs:
       - uses: docker/metadata-action@v6
         id: metadata
         with:
-          images: ghcr.io/ajcandfield/tf-repos-ci
+          images: ghcr.io/ajcandfield/tf-repos/ci
           tags: type=raw,value=build-${{ github.sha }}
       - uses: docker/build-push-action@v7
         with:
@@ -64,6 +64,6 @@ jobs:
       - name: Promote image
         run: |
           docker buildx imagetools create \
-            --tag ghcr.io/ajcandfield/tf-repos-ci:latest \
-            --tag ghcr.io/ajcandfield/tf-repos-ci:sha-${GITHUB_SHA::7} \
-            ghcr.io/ajcandfield/tf-repos-ci:build-${GITHUB_SHA}
+            --tag ghcr.io/ajcandfield/tf-repos/ci:latest \
+            --tag ghcr.io/ajcandfield/tf-repos/ci:sha-${GITHUB_SHA::7} \
+            ghcr.io/ajcandfield/tf-repos/ci:build-${GITHUB_SHA}
