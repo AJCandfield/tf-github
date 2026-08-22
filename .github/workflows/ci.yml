@@ -23,12 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Every root is a Terragrunt unit, so terraform is only installed
-      # as a dependency for terragrunt to shell out to; the pipeline
-      # never invokes terraform per root.
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.15.8 # keep in sync with .terraform-version
+      # Every root is a Terragrunt unit; the action installs terraform
+      # itself via tf_version (required input), and terragrunt shells
+      # out to it. The pipeline never invokes terraform per root.
       # terragrunt hcl fmt only covers terragrunt HCL (root.hcl,
       # terragrunt.hcl). Modules now live in AJCandfield/tf-modules and
       # are formatted/linted by that repository's CI.
@@ -36,6 +33,7 @@ jobs:
         uses: gruntwork-io/terragrunt-action@v2
         with:
           tg_version: 1.1.1 # keep in sync with .terragrunt-version
+          tf_version: 1.15.8 # keep in sync with .terraform-version
           tg_command: hcl fmt --check
       # Discovers every unit (terragrunt.hcl) recursively from the repo
       # root; new clouds or stacks need no pipeline edits. Terragrunt
@@ -44,6 +42,7 @@ jobs:
         uses: gruntwork-io/terragrunt-action@v2
         with:
           tg_version: 1.1.1
+          tf_version: 1.15.8
           tg_command: run --all --non-interactive -- validate
         env:
           # Passed to whichever provider each unit needs; GITLAB_TOKEN
