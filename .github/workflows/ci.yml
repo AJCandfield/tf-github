@@ -3,9 +3,7 @@ name: Terraform
 on:
   pull_request:
     paths:
-      - "**/*.tf"
-      - "**/*.tfvars"
-      - "**/*.hcl"
+      - "clouds/**"
       - ".terraform-version"
       - ".terragrunt-version"
       - ".mise.toml"
@@ -23,23 +21,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Every root is a Terragrunt unit; terraform is only installed as a
-      # dependency for terragrunt to shell out to. The pipeline never
-      # invokes terraform per root. gruntwork-io/terragrunt-action is
-      # avoided: its container's checksum verification is broken for
-      # terragrunt 1.1.x, so the binary is installed directly instead.
-      - uses: hashicorp/setup-terraform@v3
+      # mise installs the exact Terraform and Terragrunt versions declared in
+      # .mise.toml. Its GitHub Actions cache avoids downloading them on every
+      # run while keeping version changes reproducible.
+      - uses: jdx/mise-action@v3
         with:
-          terraform_version: 1.15.8 # keep in sync with .terraform-version
-      - name: Install Terragrunt
+          install: true
+          cache: true
+      - name: Check version-file agreement
         run: |
-          VERSION="$(cat .terragrunt-version)"
-          curl -fsSLo terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${VERSION}/terragrunt_linux_amd64"
-          curl -fsSLo SHA256SUMS "https://github.com/gruntwork-io/terragrunt/releases/download/v${VERSION}/SHA256SUMS"
-          grep ' terragrunt_linux_amd64$' SHA256SUMS | sed 's/terragrunt_linux_amd64$/terragrunt/' | sha256sum -c -
-          chmod +x terragrunt
-          sudo mv terragrunt /usr/local/bin/
-      # terragrunt hcl fmt only covers terragrunt HCL (root.hcl,
+          test "$(tr -d '[:space:]' < .terraform-version)" = "$(mise config get tools.terraform)"
+          test "$(tr -d '[:space:]' < .terragrunt-version)" = "$(mise config get tools.terragrunt)"
+      # terragrunt hcl fmt only covers Terragrunt HCL (root.hcl,
       # terragrunt.hcl). Modules live in AJCandfield/tf-modules and are
       # formatted/linted by that repository's CI.
       - name: Check Terragrunt HCL formatting
