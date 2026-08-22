@@ -20,7 +20,7 @@ jobs:
   terragrunt:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ajcandfield/tf-repos-ci:latest
+      image: ghcr.io/ajcandfield/tf-repos/ci:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
