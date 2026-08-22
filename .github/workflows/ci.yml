@@ -23,29 +23,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      # Every root is a Terragrunt unit; the action installs terraform
-      # itself via tf_version (required input), and terragrunt shells
-      # out to it. The pipeline never invokes terraform per root.
-      # terragrunt hcl fmt only covers terragrunt HCL (root.hcl,
-      # terragrunt.hcl). Modules now live in AJCandfield/tf-modules and
-      # are formatted/linted by that repository's CI.
-      - name: Check Terragrunt HCL formatting
-        uses: gruntwork-io/terragrunt-action@v2
+      # Every root is a Terragrunt unit; terraform is only installed as a
+      # dependency for terragrunt to shell out to. The pipeline never
+      # invokes terraform per root. gruntwork-io/terragrunt-action is
+      # avoided: its container's checksum verification is broken for
+      # terragrunt 1.1.x, so the binary is installed directly instead.
+      - uses: hashicorp/setup-terraform@v3
         with:
-          tg_version: 1.1.1 # keep in sync with .terragrunt-version
-          tf_version: 1.15.8 # keep in sync with .terraform-version
-          tg_command: hcl fmt --check
+          terraform_version: 1.15.8 # keep in sync with .terraform-version
+      - name: Install Terragrunt
+        run: |
+          VERSION="$(cat .terragrunt-version)"
+          curl -fsSLo terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${VERSION}/terragrunt_linux_amd64"
+          curl -fsSLo SHA256SUMS "https://github.com/gruntwork-io/terragrunt/releases/download/v${VERSION}/SHA256SUMS"
+          grep ' terragrunt_linux_amd64$' SHA256SUMS | sed 's/terragrunt_linux_amd64$/terragrunt/' | sha256sum -c -
+          chmod +x terragrunt
+          sudo mv terragrunt /usr/local/bin/
+      # terragrunt hcl fmt only covers terragrunt HCL (root.hcl,
+      # terragrunt.hcl). Modules live in AJCandfield/tf-modules and are
+      # formatted/linted by that repository's CI.
+      - name: Check Terragrunt HCL formatting
+        run: terragrunt hcl fmt --check
       # Discovers every unit (terragrunt.hcl) recursively from the repo
       # root; new clouds or stacks need no pipeline edits. Terragrunt
       # handles init and generated backend/provider files per unit.
       - name: Validate every Terragrunt unit
-        uses: gruntwork-io/terragrunt-action@v2
-        with:
-          tg_version: 1.1.1
-          tf_version: 1.15.8
-          tg_command: run --all --non-interactive -- validate
         env:
           # Passed to whichever provider each unit needs; GITLAB_TOKEN
           # becomes required once units exist under clouds/gitlab.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: terragrunt run --all --non-interactive -- validate
