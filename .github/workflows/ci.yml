@@ -5,11 +5,15 @@ on:
     paths:
       - "clouds/**"
       - ".mise.toml"
+      - "Dockerfile"
+      - ".dockerignore"
       - ".github/workflows/ci.yml"
+      - ".github/workflows/toolchain-image.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
+  packages: read
 
 env:
   TF_IN_AUTOMATION: "true"
@@ -17,12 +21,13 @@ env:
 jobs:
   terragrunt:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ajcandfield/tf-repos-ci:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v3
-        with:
-          install: true
-          cache: true
       - name: Check Terragrunt HCL formatting
         run: terragrunt hcl fmt --check
       - name: Validate every Terragrunt unit
