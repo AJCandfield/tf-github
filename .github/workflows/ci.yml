@@ -1,8 +1,16 @@
-name: CI
+name: Terraform
 
 on:
-  push:
   pull_request:
+    paths:
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - "**/*.hcl"
+      - ".terraform-version"
+      - ".terragrunt-version"
+      - ".mise.toml"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,43 +19,38 @@ env:
   TF_IN_AUTOMATION: "true"
 
 jobs:
-  modules:
+  terragrunt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      # Every root is a Terragrunt unit; terraform is only installed as a
+      # dependency for terragrunt to shell out to. The pipeline never
+      # invokes terraform per root. gruntwork-io/terragrunt-action is
+      # avoided: its container's checksum verification is broken for
+      # terragrunt 1.1.x, so the binary is installed directly instead.
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.15.8
-      - uses: terraform-linters/setup-tflint@v5
-      - run: terraform fmt -check -recursive modules
-      - run: terraform -chdir=modules/github/repository init -backend=false
-      - run: terraform -chdir=modules/github/repository validate
-      - run: terraform -chdir=modules/gitlab/project init -backend=false
-      - run: terraform -chdir=modules/gitlab/project validate
-      - run: tflint --init && tflint --recursive modules
-
-  github-live:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.15.8
-      - uses: gruntwork-io/terragrunt-action@v2
-        with:
-          tg_version: 1.1.1
-          tg_dir: clouds/github/AJCandfield/talos-gcp-infra
-          tg_command: hcl fmt --check
-      - uses: gruntwork-io/terragrunt-action@v2
-        with:
-          tg_version: 1.1.1
-          tg_dir: clouds/github/AJCandfield/talos-gcp-infra
-          tg_command: validate
+          terraform_version: 1.15.8 # keep in sync with .terraform-version
+      - name: Install Terragrunt
+        run: |
+          VERSION="$(cat .terragrunt-version)"
+          curl -fsSLo terragrunt "https://github.com/gruntwork-io/terragrunt/releases/download/v${VERSION}/terragrunt_linux_amd64"
+          curl -fsSLo SHA256SUMS "https://github.com/gruntwork-io/terragrunt/releases/download/v${VERSION}/SHA256SUMS"
+          grep ' terragrunt_linux_amd64$' SHA256SUMS | sed 's/terragrunt_linux_amd64$/terragrunt/' | sha256sum -c -
+          chmod +x terragrunt
+          sudo mv terragrunt /usr/local/bin/
+      # terragrunt hcl fmt only covers terragrunt HCL (root.hcl,
+      # terragrunt.hcl). Modules live in AJCandfield/tf-modules and are
+      # formatted/linted by that repository's CI.
+      - name: Check Terragrunt HCL formatting
+        run: terragrunt hcl fmt --check
+      # Discovers every unit (terragrunt.hcl) recursively from the repo
+      # root; new clouds or stacks need no pipeline edits. Terragrunt
+      # handles init and generated backend/provider files per unit.
+      - name: Validate every Terragrunt unit
         env:
+          # Passed to whichever provider each unit needs; GITLAB_TOKEN
+          # becomes required once units exist under clouds/gitlab.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  hygiene:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pre-commit/action@v3.0.1
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: terragrunt run --all --non-interactive -- validate
